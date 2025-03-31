@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: scholar
+
+  datasource:
+    url: jdbc:mysql://uoscholar.cdkke4m4o6zb.ap-northeast-2.rds.amazonaws.com:3306/uoscholar_db?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: admin
+    password: dongha1005!
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update  # 필요에 따라 none, update, create, create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect
