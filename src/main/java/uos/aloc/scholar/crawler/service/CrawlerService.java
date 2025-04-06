@@ -2,11 +2,11 @@ package uos.aloc.scholar.crawler.service;
 
 import uos.aloc.scholar.crawler.entity.Notice;
 import uos.aloc.scholar.crawler.repository.NoticeRepository;
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -24,14 +24,17 @@ public class CrawlerService {
 
     public void crawlNotices() {
         String baseUrl = "https://www.uos.ac.kr/korNotice/view.do";
-        // 테스트를 위해 100개 정도 크롤링 (예: 15300부터 15399까지)
-        int startSeq = 15300;
-        int endSeq = startSeq + 99;
+        //int seq = 14600; // 시작 seq 번호 (예: 2024-01-04 기준)
+        int seq =15400;
+        int missingCount = 0; // 연속으로 게시물이 없는 경우 카운트
+        int retryCount = 0;   // read timeout 재시도 카운트
+        int lastSuccessfulSeq = -1; // 마지막 성공한 seq 번호
+        final int maxRetries = 3;
 
-        for (int seq = startSeq; seq <= endSeq; seq++) {
+        while (true) {
             try {
-                // GET 요청 시 필요한 파라미터 설정
-                Document doc = Jsoup.connect(baseUrl)
+                // HTTP 응답을 받아서 Content-Type 확인
+                Connection.Response response = Jsoup.connect(baseUrl)
                         .data("list_id", "20013DA1",
                               "seq", String.valueOf(seq),
                               "sort", "1",
@@ -46,13 +49,28 @@ public class CrawlerService {
                               "menuid", "")
                         .userAgent("Mozilla/5.0")
                         .timeout(5000)
-                        .get();
+                        .execute();
 
-                // 1. 제목: <div class="vw-tibx"><h4>제목</h4></div>
+
+                // HTML 페이지를 파싱
+                Document doc = response.parse();
+
+                // 제목 추출: <div class="vw-tibx"><h4>제목</h4></div>
                 String title = doc.select("div.vw-tibx h4").text();
+                if (title == null || title.trim().isEmpty()) {
+                    missingCount++;
+                    System.out.println("Seq " + seq + " : 제목이 없어 게시물이 없는 것으로 판단. 연속 없음 횟수: " + missingCount);
+                    if (missingCount >= 3) {
+                        System.out.println("3개 연속 게시물이 없음. 크롤링 중단");
+                        break;
+                    }
+                    seq++;
+                    continue;
+                } else {
+                    missingCount = 0; // 정상 게시물이면 카운트 초기화
+                }
 
-                // 2. 작성자, 작성부서, 작성일자: <div class="vw-tibx"> 내 
-                //    <div class="zl-bx clearfix"><div class="da"><span>작성자</span><span>부서</span><span>날짜정보</span></div></div>
+                // 작성부서 및 작성일자 추출
                 Elements infoSpans = doc.select("div.vw-tibx div.zl-bx div.da span");
                 String department = "";
                 String dateText = "";
@@ -61,7 +79,7 @@ public class CrawlerService {
                     dateText = infoSpans.get(2).text();
                 }
 
-                // 3. 날짜 추출: 정규표현식을 사용하여 "YYYY-MM-DD" 형태만 추출
+                // 날짜 추출: "YYYY-MM-DD" 패턴
                 Pattern pattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})");
                 Matcher matcher = pattern.matcher(dateText);
                 String extractedDate = "";
@@ -74,23 +92,24 @@ public class CrawlerService {
                     postedDate = LocalDate.parse(extractedDate, formatter);
                 }
 
-                // 4. 게시글번호 추출: hidden input 필드 (예: <input name="seq" value="15388">)
+                // 게시글번호 추출: <input name="seq" value="...">
                 String postNumberStr = doc.select("input[name=seq]").attr("value");
                 if (postNumberStr.isEmpty()) {
                     postNumberStr = String.valueOf(seq);
                 }
                 Integer postNumber = Integer.parseInt(postNumberStr);
 
-                // 5. 링크: 현재 요청한 URL 기반으로 생성
+                // 링크 구성
                 String link = baseUrl + "?list_id=20013DA1&seq=" + seq;
 
-                // 동일한 게시글번호가 이미 DB에 있으면 저장하지 않음
+                // DB 중복 검사
                 if (noticeRepository.existsByPostNumber(postNumber)) {
                     System.out.println("Seq " + seq + " (게시글번호: " + postNumber + ") 이미 존재하여 패스합니다.");
+                    seq++;
                     continue;
                 }
 
-                // Notice 객체 생성 후 DB 저장
+                // Notice 객체 생성 및 DB 저장
                 Notice notice = new Notice();
                 notice.setPostNumber(postNumber);
                 notice.setTitle(title);
@@ -99,19 +118,41 @@ public class CrawlerService {
                 notice.setDepartment(department);
 
                 noticeRepository.save(notice);
+                lastSuccessfulSeq = seq;
                 System.out.println("Seq " + seq + " 크롤링 및 저장 성공");
 
-                // 서버 부담 완화를 위한 딜레이 (300ms)
                 Thread.sleep(300);
+                seq++;
+                retryCount = 0; // 성공하면 재시도 카운트 초기화
 
             } catch (IOException e) {
-                System.err.println("Seq " + seq + " 접속 실패: " + e.getMessage());
+                // IOException 전체에 대해 최대 maxRetries까지 재시도
+                retryCount++;
+                System.err.println("Seq " + seq + " IOException: " + e.getMessage() +
+                        " (retry " + retryCount + " of " + maxRetries + ")");
+                if (retryCount >= maxRetries) {
+                    System.out.println("Seq " + seq + " 최대 재시도 횟수 초과, 건너뜁니다.");
+                    seq++;
+                    retryCount = 0;
+                }
+                continue;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 System.err.println("Seq " + seq + " 인터럽트 발생: " + e.getMessage());
+                break;
             } catch (Exception e) {
-                System.err.println("Seq " + seq + " 기타 오류: " + e.getMessage());
+                // 기타 예외에 대해서도 최대 maxRetries까지 재시도
+                retryCount++;
+                System.err.println("Seq " + seq + " 기타 예외: " + e.getMessage() +
+                        " (retry " + retryCount + " of " + maxRetries + ")");
+                if (retryCount >= maxRetries) {
+                    System.out.println("Seq " + seq + " 최대 재시도 횟수 초과, 건너뜁니다.");
+                    seq++;
+                    retryCount = 0;
+                }
+                continue;
             }
         }
+        System.out.println("크롤링 종료. 마지막 seq: " + (lastSuccessfulSeq));
     }
 }
