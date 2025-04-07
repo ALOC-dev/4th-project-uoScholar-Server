@@ -1,6 +1,5 @@
 package uos.aloc.scholar.chatting.dto;
 
-
 import lombok.Getter;
 import lombok.Setter;
 
