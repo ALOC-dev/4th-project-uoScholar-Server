@@ -19,7 +19,7 @@ public class ChatController {
     }
 
     @PostMapping("/ai")
-    public ChatResponseDTO ai(@RequestBody ChatRequestDTO chatRequestDTO) {c
+    public ChatResponseDTO ai(@RequestBody ChatRequestDTO chatRequestDTO) {
     
         String aiResponse = aiService.getAIResponse(chatRequestDTO.getMessage());
 
