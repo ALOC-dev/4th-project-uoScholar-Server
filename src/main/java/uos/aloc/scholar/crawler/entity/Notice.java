@@ -17,6 +17,9 @@ public class Notice {
 
     private String title;
     private String link;
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String vector;
 
     @Column(name = "posted_date")
     private LocalDate postedDate;
@@ -37,7 +40,7 @@ public class Notice {
     public void setId(Long id) {
         this.id = id;
     }
-
+  
     public Integer getPostNumber() {
         return postNumber;
     }
@@ -76,5 +79,13 @@ public class Notice {
 
     public void setDepartment(String department) {
         this.department = department;
+    }
+
+    public String getVector() {
+        return vector;
+    }
+
+    public void setVector(String vector) {
+        this.vector = vector;
     }
 }

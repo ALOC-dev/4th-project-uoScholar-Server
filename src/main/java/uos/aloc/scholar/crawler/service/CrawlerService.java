@@ -116,6 +116,7 @@ public class CrawlerService {
                 notice.setLink(link);
                 notice.setPostedDate(postedDate);
                 notice.setDepartment(department);
+                notice.setVector(null);
 
                 noticeRepository.save(notice);
                 lastSuccessfulSeq = seq;
