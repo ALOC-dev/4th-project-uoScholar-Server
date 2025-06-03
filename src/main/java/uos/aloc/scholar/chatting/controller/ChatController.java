@@ -6,7 +6,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import uos.aloc.scholar.chatting.dto.ChatRequestDTO;
 import uos.aloc.scholar.chatting.dto.ChatResponseDTO;
+import uos.aloc.scholar.chatting.dto.NoticeDTO;
 import uos.aloc.scholar.chatting.service.AIService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/chat")
@@ -21,17 +24,18 @@ public class ChatController {
     @PostMapping("/ai")
     public ChatResponseDTO ai(@RequestBody ChatRequestDTO chatRequestDTO) {
     
-        String aiResponse = aiService.getAIResponse(chatRequestDTO.getMessage());
+        List<NoticeDTO> aiResponse = aiService.getAIResponse(chatRequestDTO.getMessage());
 
         ChatResponseDTO chatResponseDTO = new ChatResponseDTO();
         chatResponseDTO.setMessage(aiResponse);
+
         return chatResponseDTO;
     }
 
-    @PostMapping("/test")
-    public ChatResponseDTO test(@RequestBody ChatRequestDTO chatRequestDTO) {
-        ChatResponseDTO chatResponseDTO = new ChatResponseDTO();
-        chatResponseDTO.setMessage("서버 응답입니다.");
-        return chatResponseDTO;
-    }
+    // @PostMapping("/test")
+    // public ChatResponseDTO test(@RequestBody ChatRequestDTO chatRequestDTO) {
+    //     ChatResponseDTO chatResponseDTO = new ChatResponseDTO();
+    //     chatResponseDTO.setMessage("서버 응답입니다.");
+    //     return chatResponseDTO;
+    // }
 }

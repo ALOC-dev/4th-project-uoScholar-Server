@@ -10,6 +10,12 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import uos.aloc.scholar.chatting.dto.NoticeDTO;
 
 @Service
 @RequiredArgsConstructor
@@ -18,22 +24,26 @@ public class AIService {
     
     private static final Logger logger = LoggerFactory.getLogger(AIService.class);
 
-    @Value("${ai.server.url:http://localhost:5000}")
+    @Value("${ai.server.url:http://localhost:8000}")
     private String aiServerUrl; // AI 서버 URL
 
-    public String getAIResponse(String message) {
+    public List<NoticeDTO> getAIResponse(String message) { 
         // 요청 데이터 생성
         Map<String, Object> requestPayload = new HashMap<>();
-        requestPayload.put("message", message);
+        requestPayload.put("user_input", message);
 
-        String aiResponse = null;
+        List<NoticeDTO> aiResponse = null;
         try {
-            // AI 서버에 요청 및 응답 받기
-            aiResponse = restTemplate.postForObject(aiServerUrl + "/get-response", requestPayload, String.class);
-        } catch (RestClientException e) {
+            String response = restTemplate.postForObject(aiServerUrl + "/search", requestPayload, String.class);
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(response);
+            JsonNode resultsNode = root.path("results"); // <== "results" 필드 접근
+            aiResponse = mapper.readValue(resultsNode.traverse(), new TypeReference<List<NoticeDTO>>() {});
+        } catch (Exception e) {
             logger.error("AI 서버 호출 중 오류 발생: {}", e.getMessage(), e);
-            aiResponse = "AI 서버 호출 중 오류가 발생했습니다.";
-        }
+        }   
+        
         return aiResponse;
     }
 }
