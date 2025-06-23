@@ -24,7 +24,7 @@ public class AIService {
     
     private static final Logger logger = LoggerFactory.getLogger(AIService.class);
 
-    @Value("${ai.server.url:http://localhost:8000}")
+    @Value("${ai.server.url:https://5000-alocdev-3rdprojectuosch-3ihm59nyj5t.ws-us120.gitpod.io}")
     private String aiServerUrl; // AI 서버 URL
 
     public List<NoticeDTO> getAIResponse(String message) { 

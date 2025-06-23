@@ -20,4 +20,4 @@ spring:
 
 ai:
   server:
-    url: "http://localhost:8000"
+    url: "https://5000-alocdev-3rdprojectuosch-3ihm59nyj5t.ws-us120.gitpod.io"

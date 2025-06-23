@@ -7,6 +7,7 @@ import uos.aloc.scholar.search.service.NoticeSearchService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.time.format.DateTimeFormatter;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,7 +53,9 @@ public class NoticeSearchController {
                 dto.setTitle(n.getTitle());
                 dto.setDepartment(n.getDepartment());
                 dto.setLink(n.getLink());
-                dto.setPosted_date(n.getPostedDate().toString());
+                dto.setPosted_date(
+                    n.getPostedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        );
                 return dto;
             })
             .collect(Collectors.toList());
