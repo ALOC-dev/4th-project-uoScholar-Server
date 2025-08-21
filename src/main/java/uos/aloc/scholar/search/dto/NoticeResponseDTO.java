@@ -1,13 +1,30 @@
 package uos.aloc.scholar.search.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import uos.aloc.scholar.crawler.entity.*;
+import lombok.*;
 
-@Getter
-@Setter
+import java.time.LocalDate;
+
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class NoticeResponseDTO {
+    private Long id;
     private String title;
+    private LocalDate postedDate;
     private String department;
     private String link;
-    private String posted_date;
+    private String category; // 영문 enum 그대로
+
+    public static NoticeResponseDTO from(Notice n) {
+        return NoticeResponseDTO.builder()
+                .id(n.getId())
+                .title(n.getTitle())
+                .postedDate(n.getPostedDate())
+                .department(n.getDepartment())
+                .link(n.getLink())
+                .category(n.getCategory() != null ? n.getCategory().name() : null)
+                .build();
+    }
 }
