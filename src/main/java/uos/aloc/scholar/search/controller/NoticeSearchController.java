@@ -33,15 +33,15 @@ public class NoticeSearchController {
         // 2) HOT 조건: exact=true && page=0 && (keyword 비어있음)
         boolean wantHot = isHotRequested(req);
 
-        //키워드 저장
-        if (req.getKeyword() != null && !req.getKeyword().isBlank()) {
+        // ✅ 키워드 저장 조건: page=0 이고, 카테고리가 전부 COLLEGE_* 이며,
+        //    GENERAL/ACADEMIC 미포함, keyword 존재할 때만 카운트 증가
+        if (shouldLogKeyword(req)) {
             keywordStatsService.log(req.getKeyword());
         }
 
-
         List<NoticeResponseDTO> hot = Collections.emptyList();
         if (wantHot) {
-            List<NoticeCategory> cats = req.effectiveCategories();
+            List<NoticeCategory> cats = req.effectiveCategories(); // 프로젝트에 이미 존재한다고 가정
             List<Notice> hotEntities;
             if (cats.size() == 1) {
                 hotEntities = noticeSearchRepository
@@ -55,7 +55,7 @@ public class NoticeSearchController {
 
         // 3) 응답 빌드 (hot 포함)
         return SearchResponseDTO.<NoticeResponseDTO>builder()
-                .hot(hot) // 추가
+                .hot(hot)
                 .content(page.getContent())
                 .page(page.getNumber())
                 .size(page.getSize())
@@ -67,11 +67,35 @@ public class NoticeSearchController {
     }
 
     private boolean isHotRequested(SearchRequestDTO req) {
-        // exact, page, keyword 필드는 SearchRequestDTO에 이미 있는 전제.
-        // 만약 exact가 없다면 boolean exact 추가 필요(아래 참고).
-        boolean exact = req.isExact(); // getter 기준
+        boolean exact = req.isExact();
         int page = Math.max(0, req.getPage());
         String keyword = req.normalizedKeyword();
         return exact && page == 0 && (keyword == null || keyword.isBlank());
+    }
+
+    // ===== 추가: 키워드 로깅 조건 검사 =====
+    private boolean shouldLogKeyword(SearchRequestDTO req) {
+        if (req == null) return false;
+        if (req.getPage() != 0) return false;
+
+        String kw = req.getKeyword();
+        if (kw == null || kw.isBlank()) return false;
+
+        List<NoticeCategory> cats = req.getCategory();
+        if (cats == null || cats.isEmpty()) return false;
+
+        // 모든 카테고리가 COLLEGE_* 이고, GENERAL/ACADEMIC이 하나도 없어야 함
+        boolean allCollege = cats.stream().allMatch(this::isCollegeCategory);
+        boolean hasGenOrAcad = cats.stream().anyMatch(this::isGeneralOrAcademic);
+
+        return allCollege && !hasGenOrAcad;
+    }
+
+    private boolean isCollegeCategory(NoticeCategory c) {
+        return c != null && c.name().startsWith("COLLEGE_");
+    }
+
+    private boolean isGeneralOrAcademic(NoticeCategory c) {
+        return c == NoticeCategory.GENERAL || c == NoticeCategory.ACADEMIC;
     }
 }

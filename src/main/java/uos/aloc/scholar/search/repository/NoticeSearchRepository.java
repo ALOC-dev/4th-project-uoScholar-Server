@@ -1,6 +1,6 @@
 package uos.aloc.scholar.search.repository;
 
-import uos.aloc.scholar.crawler.entity.*;          // ⚠ 실제 패키지로 교체
+import uos.aloc.scholar.crawler.entity.*;        
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;

@@ -20,13 +20,12 @@ public class KeywordStatsService {
     private final KeywordStatsRepository repo;
 
     private static final int MIN_LEN = 2; // 1글자 방지
-    private static final Set<String> STOPWORDS = Set.of("공지", "학사", "공지사항", "및", "그리고");
 
     /** 검색 키워드 기록 (요청당 1회) */
     @Transactional
     public void log(String rawKeyword) {
         String keyword = normalize(rawKeyword);
-        if (keyword.isBlank() || keyword.length() < MIN_LEN || STOPWORDS.contains(keyword)) return;
+        if (keyword.isBlank() || keyword.length() < MIN_LEN) return;
 
         LocalDate today = LocalDate.now();
 
