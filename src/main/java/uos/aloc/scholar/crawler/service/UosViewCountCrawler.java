@@ -33,15 +33,20 @@ public class UosViewCountCrawler {
 
     /** 지정된 4개 보드를 순차 실행 */
     @Transactional
-    public void syncAllFourBoards(int maxPages) {
-        //  test시에만 4개고 이후에는 늘려야함
+    public void syncAllBoards(int maxPages) {
         syncCategoryWithListId(NoticeCategory.GENERAL,   "FA1",      maxPages); 
         syncCategoryWithListId(NoticeCategory.ACADEMIC,  "FA2",      maxPages); 
         syncCategoryWithListId(NoticeCategory.COLLEGE_ENGINEERING,"20013DA1", maxPages); 
+        syncCategoryWithListId(NoticeCategory.COLLEGE_HUMANITIES,"human01",  maxPages); 
+        syncCategoryWithListId(NoticeCategory.COLLEGE_SOCIAL_SCIENCES,"econo01",  maxPages); 
+        syncCategoryWithListId(NoticeCategory.COLLEGE_URBAN_SCIENCE,"urbansciences01",  maxPages); 
+        syncCategoryWithListId(NoticeCategory.COLLEGE_ARTS_SPORTS,"artandsport01",  maxPages); 
+        syncCategoryWithListId(NoticeCategory.COLLEGE_BUSINESS,"20008N2",  maxPages); 
         syncCategoryWithListId(NoticeCategory.COLLEGE_NATURAL_SCIENCES,"scien01",  maxPages); 
+        syncCategoryWithListId(NoticeCategory.COLLEGE_LIBERAL_CONVERGENCE,"clacds01",  maxPages); 
     }
 
-    /** 기존 단일진행 메서드(FA1 전용)도 유지하고 싶다면 */
+    /** 기존 단일진행 메서드(FA1 전용)*/
     @Transactional
     public void syncGeneralFA1(int maxPages) {
         syncCategoryWithListId(NoticeCategory.GENERAL, "FA1", maxPages);

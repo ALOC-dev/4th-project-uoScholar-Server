@@ -6,6 +6,7 @@ import uos.aloc.scholar.search.dto.NoticeResponseDTO;
 import uos.aloc.scholar.search.dto.SearchRequestDTO;
 import uos.aloc.scholar.search.dto.SearchResponseDTO;
 import uos.aloc.scholar.search.repository.NoticeSearchRepository;
+import uos.aloc.scholar.search.service.KeywordStatsService;
 import uos.aloc.scholar.search.service.NoticeSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,7 +21,8 @@ import java.util.List;
 public class NoticeSearchController {
 
     private final NoticeSearchService noticeSearchService;
-    private final NoticeSearchRepository noticeSearchRepository; // ✅ 추가 주입
+    private final NoticeSearchRepository noticeSearchRepository;
+    private final KeywordStatsService keywordStatsService;
 
     @GetMapping("/search")
     public SearchResponseDTO<NoticeResponseDTO> search(@ModelAttribute SearchRequestDTO req) {
@@ -30,6 +32,12 @@ public class NoticeSearchController {
 
         // 2) HOT 조건: exact=true && page=0 && (keyword 비어있음)
         boolean wantHot = isHotRequested(req);
+
+        //키워드 저장
+        if (req.getKeyword() != null && !req.getKeyword().isBlank()) {
+            keywordStatsService.log(req.getKeyword());
+        }
+
 
         List<NoticeResponseDTO> hot = Collections.emptyList();
         if (wantHot) {
@@ -47,7 +55,7 @@ public class NoticeSearchController {
 
         // 3) 응답 빌드 (hot 포함)
         return SearchResponseDTO.<NoticeResponseDTO>builder()
-                .hot(hot) // ✅ 추가
+                .hot(hot) // 추가
                 .content(page.getContent())
                 .page(page.getNumber())
                 .size(page.getSize())
