@@ -8,6 +8,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class SearchResponseDTO<T> {
+    private List<T> hot;
     private List<T> content;
     private int page;
     private int size;

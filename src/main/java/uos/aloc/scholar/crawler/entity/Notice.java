@@ -51,6 +51,9 @@ public class Notice {
     /** 작성부서(원문 표기 그대로 저장) */
     private String department;
 
+    @Column(name = "view_count", nullable = true) // nullable=true는 DDL 힌트(스키마 생성 시)
+    private Integer viewCount = 0;                // 엔티티 기본값 0 (INSERT 시 null 방지)
+
     public Notice() {}
 
     // getters & setters
@@ -81,6 +84,9 @@ public class Notice {
 
     public String getDepartment() { return department; }
     public void setDepartment(String department) { this.department = department; }
+
+    public Integer getViewCount() { return viewCount; }
+    public void setViewCount(Integer viewCount) { this.viewCount = viewCount; }
 
 }
 

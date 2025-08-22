@@ -16,6 +16,7 @@ public class NoticeResponseDTO {
     private String department;
     private String link;
     private String category; // 영문 enum 그대로
+    private Integer viewCount;
 
     public static NoticeResponseDTO from(Notice n) {
         return NoticeResponseDTO.builder()
@@ -25,6 +26,7 @@ public class NoticeResponseDTO {
                 .department(n.getDepartment())
                 .link(n.getLink())
                 .category(n.getCategory() != null ? n.getCategory().name() : null)
+                .viewCount(n.getViewCount())
                 .build();
     }
 }

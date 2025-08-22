@@ -25,4 +25,10 @@ public interface NoticeSearchRepository extends JpaRepository<Notice, Long> {
     Page<Notice> search(@Param("keyword") String keyword,
                         @Param("categories") List<NoticeCategory> categories,
                         Pageable pageable);
+
+                        // ✅ HOT Top3 (단일 카테고리)
+    List<Notice> findTop3ByCategoryOrderByViewCountDescPostedDateDesc(NoticeCategory category);
+
+    // ✅ HOT Top3 (다중 카테고리 합집합에서 상위 3개)
+    List<Notice> findTop3ByCategoryInOrderByViewCountDescPostedDateDesc(List<NoticeCategory> categories);
 }
