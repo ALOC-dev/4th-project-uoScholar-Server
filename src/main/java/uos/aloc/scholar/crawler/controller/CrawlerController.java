@@ -14,7 +14,7 @@ public class CrawlerController {
     // http://localhost:8080/admin/view-sync/all?pages=3
     @PostMapping("/all")
     public String syncAll(@RequestParam(defaultValue = "10") int pages) {
-        crawler.syncAllFourBoards(pages);
+        crawler.syncAllBoards(pages);
         return "OK";
     }
 
