@@ -1,24 +1,31 @@
-// package uos.aloc.scholar.crawler.controller;
+package uos.aloc.scholar.crawler.controller;
 
-// import uos.aloc.scholar.crawler.service.CrawlerService;
-// import org.springframework.web.bind.annotation.GetMapping;
-// import org.springframework.web.bind.annotation.RequestMapping;
-// import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+import uos.aloc.scholar.crawler.service.UosViewCountCrawler;
 
-// @RestController
-// @RequestMapping("/crawl")
-// public class CrawlerController {
+@RestController
+@RequestMapping("/admin/view-sync")
+@RequiredArgsConstructor
+public class CrawlerController {
 
-//     private final CrawlerService crawlerService;
+    private final UosViewCountCrawler crawler;
 
-//     public CrawlerController(CrawlerService crawlerService) {
-//         this.crawlerService = crawlerService;
-//     }
+    // http://localhost:8080/admin/view-sync/all?pages=3
+    @PostMapping("/all")
+    public String syncAll(@RequestParam(defaultValue = "10") int pages) {
+        crawler.syncAllFourBoards(pages);
+        return "OK";
+    }
 
-//     // 수동으로 일정 seqNumber에서부터 가장 최근 것까지 crawl실행.
-//     @GetMapping("/all")
-//     public String crawlNotices() {
-//         crawlerService.crawlNotices();
-//         return "크롤링 완료";
-//     }
-// }
+    // http://localhost:8080/admin/view-sync/general?pages=3
+    @PostMapping("/general")
+    public String syncGeneral(@RequestParam(defaultValue = "10") int pages) {
+        crawler.syncCategoryWithListId(
+            uos.aloc.scholar.crawler.entity.NoticeCategory.GENERAL,
+            "FA1",
+            pages
+        );
+        return "OK";
+    }
+}
