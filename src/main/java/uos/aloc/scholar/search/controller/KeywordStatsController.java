@@ -18,8 +18,8 @@ public class KeywordStatsController {
     // 예: GET /search/popular?days=7&limit=5
     @GetMapping("/popular")
     public Map<String, String> popular(
-            @RequestParam(defaultValue = "30") int days,
-            @RequestParam(defaultValue = "5") int limit
+            @RequestParam(defaultValue = "30") int days, // 최근 30일
+            @RequestParam(defaultValue = "5") int limit  // 5개 보내주기
     ) {
         List<KeywordStatsService.PopularKeyword> list = service.top(days, limit);
 

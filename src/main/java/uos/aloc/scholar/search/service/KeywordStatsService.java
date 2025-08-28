@@ -1,4 +1,3 @@
-// src/main/java/uos/aloc/scholar/search/service/KeywordStatsService.java
 package uos.aloc.scholar.search.service;
 
 import lombok.RequiredArgsConstructor;
