@@ -18,8 +18,8 @@ public class ViewCountCrawlJob {
     @Value("${crawler.view-sync.pages:10}")
     private int pages;
 
-    // 기본: 12시간마다
-    @Scheduled(cron = "${crawler.view-sync.cron:0 0 */12 * * *}", zone = "Asia/Seoul")
+    // 기본: 3시간마다
+    @Scheduled(cron = "${crawler.view-sync.cron:0 0 */3 * * *}", zone = "Asia/Seoul")
     public void run() {
         log.info("[ViewCountCrawlJob] start (pages={})", pages);
         try {

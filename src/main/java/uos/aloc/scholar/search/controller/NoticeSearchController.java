@@ -2,6 +2,7 @@ package uos.aloc.scholar.search.controller;
 
 import uos.aloc.scholar.crawler.entity.Notice;
 import uos.aloc.scholar.crawler.entity.NoticeCategory;
+import uos.aloc.scholar.search.config.HotSearchProperties;
 import uos.aloc.scholar.search.dto.NoticeResponseDTO;
 import uos.aloc.scholar.search.dto.SearchRequestDTO;
 import uos.aloc.scholar.search.dto.SearchResponseDTO;
@@ -12,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
@@ -23,6 +26,8 @@ public class NoticeSearchController {
     private final NoticeSearchService noticeSearchService;
     private final NoticeSearchRepository noticeSearchRepository;
     private final KeywordStatsService keywordStatsService;
+    private final HotSearchProperties hotSearchProperties;
+    private final Clock clock;
 
     @GetMapping("/search")
     public SearchResponseDTO<NoticeResponseDTO> search(@ModelAttribute SearchRequestDTO req) {
@@ -42,13 +47,20 @@ public class NoticeSearchController {
         List<NoticeResponseDTO> hot = Collections.emptyList();
         if (wantHot) {
             List<NoticeCategory> cats = req.effectiveCategories(); // 프로젝트에 이미 존재한다고 가정
+            LocalDate fromDate = resolveHotFromDate();
             List<Notice> hotEntities;
             if (cats.size() == 1) {
                 hotEntities = noticeSearchRepository
-                        .findTop3ByCategoryOrderByViewCountDescPostedDateDesc(cats.get(0));
+                        .findTop3ByCategoryAndPostedDateGreaterThanEqualOrderByViewCountDescPostedDateDesc(
+                                cats.get(0),
+                                fromDate
+                        );
             } else {
                 hotEntities = noticeSearchRepository
-                        .findTop3ByCategoryInOrderByViewCountDescPostedDateDesc(cats);
+                        .findTop3ByCategoryInAndPostedDateGreaterThanEqualOrderByViewCountDescPostedDateDesc(
+                                cats,
+                                fromDate
+                        );
             }
             hot = hotEntities.stream().map(NoticeResponseDTO::from).toList();
         }
@@ -97,5 +109,14 @@ public class NoticeSearchController {
 
     private boolean isGeneralOrAcademic(NoticeCategory c) {
         return c == NoticeCategory.GENERAL || c == NoticeCategory.ACADEMIC;
+    }
+
+    private LocalDate resolveHotFromDate() {
+        long days = hotSearchProperties.getLookbackDays();
+        LocalDate today = LocalDate.now(clock);
+        if (days <= 0) {
+            return today;
+        }
+        return today.minusDays(days);
     }
 }
