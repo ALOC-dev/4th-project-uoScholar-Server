@@ -38,17 +38,17 @@
 ## API 요약
 | 메서드 | 경로 | 설명 |
 | --- | --- | --- |
-| `GET` | `/notices/search` | 키워드·카테고리 검색 결과와 HOT 리스트를 반환합니다. `exact=true`이고 첫 페이지에서 키워드가 비어 있을 때 HOT 섹션이 활성화됩니다.【F:src/main/java/uos/aloc/scholar/search/controller/NoticeSearchController.java†L32-L74】 |
-| `GET` | `/search/popular` | 최근 N일 인기 검색어를 순번별(`keyword1`~)로 응답합니다.【F:src/main/java/uos/aloc/scholar/search/controller/KeywordStatsController.java†L16-L35】 |
-| `POST` | `/admin/view-sync/all` | 모든 게시판에 대해 조회수 동기화를 실행합니다.【F:src/main/java/uos/aloc/scholar/crawler/controller/CrawlerController.java†L14-L23】 |
-| `POST` | `/admin/view-sync/general` | 일반 공지 게시판만 조회수 동기화를 수행합니다.【F:src/main/java/uos/aloc/scholar/crawler/controller/CrawlerController.java†L25-L31】 |
-| `POST` | `/chat/ai` | 사용자의 메시지를 AI 서버에 전달하고 추천 공지를 반환합니다.【F:src/main/java/uos/aloc/scholar/chatting/controller/ChatController.java†L21-L39】 |
+| `GET` | `/notices/search` | 키워드·카테고리 검색 결과와 HOT 리스트를 반환합니다. `exact=true`이고 첫 페이지에서 키워드가 비어 있을 때 HOT 섹션이 활성화됩니다. |
+| `GET` | `/search/popular` | 최근 N일 인기 검색어를 순번별(`keyword1`~)로 응답합니다. |
+| `POST` | `/admin/view-sync/all` | 모든 게시판에 대해 조회수 동기화를 실행합니다. |
+| `POST` | `/admin/view-sync/general` | 일반 공지 게시판만 조회수 동기화를 수행합니다.| 
+| `POST` | `/chat/ai` | 사용자의 메시지를 AI 서버에 전달하고 추천 공지를 반환합니다. |
 
-`SearchResponseDTO` 응답은 `hot`, `content`, 페이지 정보(`page`, `size`, `totalElements` 등)를 포함합니다.【F:src/main/java/uos/aloc/scholar/search/dto/SearchResponseDTO.java†L5-L17】 `NoticeResponseDTO`는 공지 ID, 제목, 게시일, 부서, 링크, 카테고리, 조회수 필드를 제공합니다.【F:src/main/java/uos/aloc/scholar/search/dto/NoticeResponseDTO.java†L6-L26】
+`SearchResponseDTO` 응답은 `hot`, `content`, 페이지 정보(`page`, `size`, `totalElements` 등)를 포함합니다. `NoticeResponseDTO`는 공지 ID, 제목, 게시일, 부서, 링크, 카테고리, 조회수 필드를 제공합니다.
 
 ## 스케줄링 및 크롤링 동작
-- `@EnableScheduling` 구성(`SchedulingConfig`)이 활성화되어 있으며, `ViewCountCrawlJob`은 기본적으로 3시간 간격(`0 0 */3 * * *`)으로 실행됩니다.【F:src/main/java/uos/aloc/scholar/crawler/config/SchedulingConfig.java†L5-L11】【F:src/main/java/uos/aloc/scholar/crawler/schedule/ViewCountCrawlJob.java†L19-L26】
-- 크롤러는 페이지별로 `ViewEntry` 리스트를 구성한 뒤 DB 조회 결과와 비교해 존재하지 않는 게시물에서는 miss streak를 증가시키고, 조회수가 변한 게시물만 갱신해 불필요한 UPDATE를 줄입니다.【F:src/main/java/uos/aloc/scholar/crawler/service/UosViewCountCrawler.java†L117-L206】
+- `@EnableScheduling` 구성(`SchedulingConfig`)이 활성화되어 있으며, `ViewCountCrawlJob`은 기본적으로 3시간 간격(`0 0 */3 * * *`)으로 실행됩니다.
+- 크롤러는 페이지별로 `ViewEntry` 리스트를 구성한 뒤 DB 조회 결과와 비교해 존재하지 않는 게시물에서는 miss streak를 증가시키고, 조회수가 변한 게시물만 갱신해 불필요한 UPDATE를 줄입니다.
 
 ## 환경 설정
 다음 속성은 `application.yml` 또는 환경 변수로 조정할 수 있습니다.
@@ -56,43 +56,7 @@
 | 프로퍼티 | 기본값 | 설명 |
 | --- | --- | --- |
 | `spring.datasource.url`, `spring.datasource.username`, `spring.datasource.password` | 없음 | MySQL 등 JPA 연결 정보 (필수). |
-| `crawler.view-sync.pages` | `10` | 각 게시판에서 확인할 페이지 수.【F:src/main/java/uos/aloc/scholar/crawler/schedule/ViewCountCrawlJob.java†L19-L24】 |
-| `crawler.view-sync.cron` | `0 0 */3 * * *` | 조회수 동기화 작업의 실행 주기.【F:src/main/java/uos/aloc/scholar/crawler/schedule/ViewCountCrawlJob.java†L21-L26】 |
-| `search.hot.lookback-days` | `30` | HOT 섹션에 포함할 최대 경과 일수.【F:src/main/java/uos/aloc/scholar/search/config/HotSearchProperties.java†L7-L22】 |
-| `ai.server.url` | `https://5000-alocdev-3rdprojectuosch-3ihm59nyj5t.ws-us120.gitpod.io` | AI 추천 서버 엔드포인트 기본값.【F:src/main/java/uos/aloc/scholar/chatting/service/AIService.java†L25-L29】 |
-
-## 로컬 실행 방법
-1. **사전 준비**: JDK 17 이상과 MySQL 데이터베이스를 설치합니다. 애플리케이션이 사용할 DB와 계정을 생성하세요.【F:build.gradle†L10-L13】
-2. **환경 구성**: `src/main/resources/application.yml`을 생성해 데이터소스 및 위 설정값을 정의합니다 (예시는 아래 참고).
-   ```yaml
-   spring:
-     datasource:
-       url: jdbc:mysql://localhost:3306/uo_scholar?useSSL=false&serverTimezone=Asia/Seoul
-       username: root
-       password: secret
-     jpa:
-       hibernate:
-         ddl-auto: update
-       properties:
-         hibernate:
-           format_sql: true
-   search:
-     hot:
-       lookback-days: 30
-   crawler:
-     view-sync:
-       pages: 10
-       cron: "0 0 */3 * * *"
-   ai:
-     server:
-       url: https://example.com
-   ```
-3. **빌드 및 실행**:
-   - 종속성 설치 및 빌드: `./gradlew build`
-   - 개발 서버 실행: `./gradlew bootRun`
-4. **테스트 데이터 수집**: 애플리케이션을 기동한 뒤 자동 스케줄러 또는 `/admin/view-sync/all` 호출로 초기 조회수를 동기화합니다.【F:src/main/java/uos/aloc/scholar/crawler/controller/CrawlerController.java†L14-L23】
-
-## 추가 가이드
-- 메인 클래스 `ScholarApplication`을 통해 애플리케이션을 시작하며, 스케줄러와 REST 컨트롤러 빈이 자동으로 등록됩니다.【F:src/main/java/uos/aloc/scholar/ScholarApplication.java†L1-L14】
-- `NoticeCategory` 열거형을 확장하면 크롤러 및 검색 로직에도 동일하게 반영되므로, 새로운 게시판을 지원할 때는 `syncAllBoards`에 해당 게시판 호출을 추가하세요.【F:src/main/java/uos/aloc/scholar/crawler/service/UosViewCountCrawler.java†L37-L49】【F:src/main/java/uos/aloc/scholar/crawler/entity/NoticeCategory.java†L1-L13】
-- 외부 AI 서버가 응답하지 않을 경우 `AIService`는 오류를 로깅하고 `null` 응답을 반환하므로, 프런트엔드에서 예외 처리를 해주는 것이 좋습니다.【F:src/main/java/uos/aloc/scholar/chatting/service/AIService.java†L33-L49】
+| `crawler.view-sync.pages` | `10` | 각 게시판에서 확인할 페이지 수.|
+| `crawler.view-sync.cron` | `0 0 */3 * * *` | 조회수 동기화 작업의 실행 주기. |
+| `search.hot.lookback-days` | `30` | HOT 섹션에 포함할 최대 경과 일수. |
+| `ai.server.url` | `https://5000-alocdev-3rdprojectuosch-3ihm59nyj5t.ws-us120.gitpod.io` | AI 추천 서버 엔드포인트 기본값. |
