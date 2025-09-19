@@ -42,7 +42,6 @@
 | `GET` | `/search/popular` | 최근 N일 인기 검색어를 순번별(`keyword1`~)로 응답합니다. |
 | `POST` | `/admin/view-sync/all` | 모든 게시판에 대해 조회수 동기화를 실행합니다. |
 | `POST` | `/admin/view-sync/general` | 일반 공지 게시판만 조회수 동기화를 수행합니다.| 
-| `POST` | `/chat/ai` | 사용자의 메시지를 AI 서버에 전달하고 추천 공지를 반환합니다. |
 
 `SearchResponseDTO` 응답은 `hot`, `content`, 페이지 정보(`page`, `size`, `totalElements` 등)를 포함합니다. `NoticeResponseDTO`는 공지 ID, 제목, 게시일, 부서, 링크, 카테고리, 조회수 필드를 제공합니다.
 
