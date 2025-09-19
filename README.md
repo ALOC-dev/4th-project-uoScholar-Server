@@ -1,44 +1,39 @@
 # UOS Scholar Server
 
 ## 프로젝트 개요
-서울시립대학교 공지사항을 통합 수집·검색·추천하는 Spring Boot 백엔드 애플리케이션입니다. 공지 크롤러가 주기적으로 게시판을 순회해 `Notice` 엔티티를 갱신하고, 검색 API는 카테고리/키워드 조건으로 목록을 제공하며 HOT 섹션은 최근 게시물 중 조회수 상위 3건을 노출합니다. 또한 검색 키워드를 집계해 인기어를 노출하고, 외부 AI 추천 서버와 연동된 챗봇 엔드포인트도 제공합니다.【F:src/main/java/uos/aloc/scholar/crawler/service/UosViewCountCrawler.java†L27-L116】【F:src/main/java/uos/aloc/scholar/search/controller/NoticeSearchController.java†L24-L89】【F:src/main/java/uos/aloc/scholar/search/controller/KeywordStatsController.java†L16-L35】【F:src/main/java/uos/aloc/scholar/chatting/controller/ChatController.java†L15-L39】
+서울시립대학교 공지사항을 통합 수집·검색·추천하는 Spring Boot 백엔드 애플리케이션입니다. 공지 크롤러가 주기적으로 게시판을 순회해 `Notice` 엔티티를 갱신하고, 검색 API는 카테고리/키워드 조건으로 목록을 제공하며 HOT 섹션은 최근 게시물 중 조회수 상위 3건을 노출합니다. 또한 검색 키워드를 집계해 인기어를 노출하고, 외부 AI 추천 서버와 연동된 챗봇 엔드포인트도 제공합니다.
 
 ## 기술 스택
-- **Java 17** 및 **Spring Boot 3.4** 기반 백엔드.【F:build.gradle†L1-L33】
-- **Spring Data JPA**로 MySQL 등 관계형 데이터베이스에 매핑.【F:build.gradle†L23-L32】
-- **Jsoup**로 웹 페이지 파싱 후 조회수 정보를 추출.【F:src/main/java/uos/aloc/scholar/crawler/service/UosViewCountCrawler.java†L33-L112】
-- **Lombok**으로 DTO/엔티티 보일러플레이트 최소화.【F:build.gradle†L23-L32】
+- **Java 17** 및 **Spring Boot 3.4** 기반 백엔드.
+- **Spring Data JPA**로 MySQL 등 관계형 데이터베이스에 매핑.
+- **Jsoup**로 웹 페이지 파싱 후 조회수 정보를 추출.
+- **Lombok**으로 DTO/엔티티 보일러플레이트 최소화.
 
 ## 주요 모듈
 ### 검색
-- `NoticeSearchController`는 `/notices/search` 요청을 받아 페이지네이션된 공지 목록과 HOT 섹션을 함께 반환합니다.【F:src/main/java/uos/aloc/scholar/search/controller/NoticeSearchController.java†L32-L89】
-- `SearchRequestDTO`는 키워드, 카테고리, 페이지 정보와 `exact` 옵션을 정규화하여 검색 조건을 구성합니다.【F:src/main/java/uos/aloc/scholar/search/dto/SearchRequestDTO.java†L15-L42】
-- `NoticeSearchServiceImpl`은 `NoticeSearchRepository`의 JPQL 검색 메서드를 호출해 결과를 DTO로 변환합니다.【F:src/main/java/uos/aloc/scholar/search/service/NoticeSearchServiceImpl.java†L15-L27】【F:src/main/java/uos/aloc/scholar/search/repository/NoticeSearchRepository.java†L14-L34】
+- `NoticeSearchController`는 `/notices/search` 요청을 받아 페이지네이션된 공지 목록과 HOT 섹션을 함께 반환합니다.
+- `SearchRequestDTO`는 키워드, 카테고리, 페이지 정보와 `exact` 옵션을 정규화하여 검색 조건을 구성합니다.
+- `NoticeSearchServiceImpl`은 `NoticeSearchRepository`의 JPQL 검색 메서드를 호출해 결과를 DTO로 변환합니다.
 
 ### HOT 노출
-- `HotSearchProperties`는 `search.hot.lookback-days` 설정을 통해 HOT 섹션에 포함할 최대 경과 일수를 주입합니다.【F:src/main/java/uos/aloc/scholar/search/config/HotSearchProperties.java†L7-L22】
-- `ClockConfig`에서 공용 `Clock` 빈을 `Asia/Seoul` 타임존으로 등록해 날짜 계산을 일관되게 수행합니다.【F:src/main/java/uos/aloc/scholar/config/ClockConfig.java†L5-L18】
-- `NoticeSearchRepository`는 단일 또는 다중 카테고리에서 최근 게시물만을 대상으로 조회수 상위 3건을 반환하는 파생 쿼리를 제공합니다.【F:src/main/java/uos/aloc/scholar/search/repository/NoticeSearchRepository.java†L26-L34】
+- `HotSearchProperties`는 `search.hot.lookback-days` 설정을 통해 HOT 섹션에 포함할 최대 경과 일수를 주입합니다.
+- `ClockConfig`에서 공용 `Clock` 빈을 `Asia/Seoul` 타임존으로 등록해 날짜 계산을 일관되게 수행합니다.
+- `NoticeSearchRepository`는 단일 또는 다중 카테고리에서 최근 게시물만을 대상으로 조회수 상위 3건을 반환하는 파생 쿼리를 제공합니다.
 
 ### 키워드 통계
-- `KeywordStatsService`는 검색 키워드 로그를 저장하고 최근 N일 인기어 상위 K건을 계산합니다.【F:src/main/java/uos/aloc/scholar/search/service/KeywordStatsService.java†L19-L61】
-- `KeywordStatsController`는 `/search/popular` 엔드포인트에서 인기어를 순번별로 반환합니다.【F:src/main/java/uos/aloc/scholar/search/controller/KeywordStatsController.java†L16-L35】
-- `SearchKeywordDaily` 엔티티는 키워드·일자별 집계 테이블을 정의하며, 중복 방지를 위해 `(keyword, day)` 유니크 제약을 가집니다.【F:src/main/java/uos/aloc/scholar/search/entity/SearchKeywordDaily.java†L7-L28】
+- `KeywordStatsService`는 검색 키워드 로그를 저장하고 최근 N일 인기어 상위 K건을 계산합니다.
+- `KeywordStatsController`는 `/search/popular` 엔드포인트에서 인기어를 순번별로 반환합니다.
+- `SearchKeywordDaily` 엔티티는 키워드·일자별 집계 테이블을 정의하며, 중복 방지를 위해 `(keyword, day)` 유니크 제약을 가집니다.
 
 ### 조회수 크롤러
-- `UosViewCountCrawler`는 게시판 HTML을 파싱해 페이지별 게시물 번호와 조회수를 추출하고, 데이터베이스와 비교 후 변경된 항목만 업데이트합니다.【F:src/main/java/uos/aloc/scholar/crawler/service/UosViewCountCrawler.java†L27-L206】
-- `NoticeRepository`는 조회수 일괄 갱신을 위한 `updateViewCount` 쿼리와 페이지 내 게시물 사전 조회 메서드를 제공합니다.【F:src/main/java/uos/aloc/scholar/crawler/repository/NoticeRepository.java†L16-L28】
-- `ViewCountCrawlJob`은 3시간마다 전체 게시판 동기화를 트리거하며, `crawler.view-sync.pages` 설정으로 탐색 페이지 수를 조절합니다.【F:src/main/java/uos/aloc/scholar/crawler/schedule/ViewCountCrawlJob.java†L19-L30】
-- `CrawlerController`는 관리자용 수동 동기화 엔드포인트(`/admin/view-sync/*`)를 제공합니다.【F:src/main/java/uos/aloc/scholar/crawler/controller/CrawlerController.java†L14-L31】
-
-### AI 챗봇 연동
-- `ChatController`는 `/chat/ai` 요청을 받아 AI 서버의 검색 결과를 전달합니다.【F:src/main/java/uos/aloc/scholar/chatting/controller/ChatController.java†L15-L39】
-- `AIService`는 `RestTemplate`을 사용해 외부 AI 서버의 `/search` 엔드포인트를 호출하고 응답을 `NoticeDTO` 리스트로 변환합니다.【F:src/main/java/uos/aloc/scholar/chatting/service/AIService.java†L21-L50】
-- `RestTemplateConfig`는 `RestTemplate` 빈을 구성해 서비스에 주입합니다.【F:src/main/java/uos/aloc/scholar/chatting/config/RestTemplateConfig.java†L5-L13】
+- `UosViewCountCrawler`는 게시판 HTML을 파싱해 페이지별 게시물 번호와 조회수를 추출하고, 데이터베이스와 비교 후 변경된 항목만 업데이트합니다.
+- `NoticeRepository`는 조회수 일괄 갱신을 위한 `updateViewCount` 쿼리와 페이지 내 게시물 사전 조회 메서드를 제공합니다.
+- `ViewCountCrawlJob`은 3시간마다 전체 게시판 동기화를 트리거하며, `crawler.view-sync.pages` 설정으로 탐색 페이지 수를 조절합니다.
+- `CrawlerController`는 관리자용 수동 동기화 엔드포인트(`/admin/view-sync/*`)를 제공합니다.
 
 ## 도메인 모델
-- `Notice` 엔티티는 카테고리, 게시글 번호, 제목, 요약, 게시일, 부서, 조회수 등을 저장하며 `(category, post_number)`에 유니크 제약, `(category, posted_date, id)` 인덱스를 정의합니다.【F:src/main/java/uos/aloc/scholar/crawler/entity/Notice.java†L7-L74】
-- `NoticeCategory` 열거형은 일반/학사 공지 및 각 단과대 게시판을 표현합니다.【F:src/main/java/uos/aloc/scholar/crawler/entity/NoticeCategory.java†L1-L13】
+- `Notice` 엔티티는 카테고리, 게시글 번호, 제목, 요약, 게시일, 부서, 조회수 등을 저장하며 `(category, post_number)`에 유니크 제약, `(category, posted_date, id)` 인덱스를 정의합니다.
+- `NoticeCategory` 열거형은 일반/학사 공지 및 각 단과대 게시판을 표현합니다.
 
 ## API 요약
 | 메서드 | 경로 | 설명 |
