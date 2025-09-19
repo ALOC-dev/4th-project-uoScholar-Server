@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface NoticeSearchRepository extends JpaRepository<Notice, Long> {
@@ -26,9 +27,15 @@ public interface NoticeSearchRepository extends JpaRepository<Notice, Long> {
                         @Param("categories") List<NoticeCategory> categories,
                         Pageable pageable);
 
-                        // ✅ HOT Top3 (단일 카테고리)
-    List<Notice> findTop3ByCategoryOrderByViewCountDescPostedDateDesc(NoticeCategory category);
+    // ✅ HOT Top3 (단일 카테고리)
+    List<Notice> findTop3ByCategoryAndPostedDateGreaterThanEqualOrderByViewCountDescPostedDateDesc(
+            NoticeCategory category,
+            LocalDate fromDate
+    );
 
     // ✅ HOT Top3 (다중 카테고리 합집합에서 상위 3개)
-    List<Notice> findTop3ByCategoryInOrderByViewCountDescPostedDateDesc(List<NoticeCategory> categories);
+    List<Notice> findTop3ByCategoryInAndPostedDateGreaterThanEqualOrderByViewCountDescPostedDateDesc(
+            List<NoticeCategory> categories,
+            LocalDate fromDate
+    );
 }

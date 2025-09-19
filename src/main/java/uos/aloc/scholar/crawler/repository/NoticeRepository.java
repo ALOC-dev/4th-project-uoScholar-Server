@@ -9,6 +9,9 @@ import org.springframework.stereotype.Repository;
 import uos.aloc.scholar.crawler.entity.Notice;
 import uos.aloc.scholar.crawler.entity.NoticeCategory;
 
+import java.util.Collection;
+import java.util.List;
+
 @Repository
 // NoticeRepository.java
 public interface NoticeRepository extends JpaRepository<Notice, Long> {
@@ -19,7 +22,9 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
        WHERE n.category = :category AND n.postNumber = :postNumber
     """)
     int updateViewCount(@Param("category") NoticeCategory category,
-                        @Param("postNumber") Long postNumber,
+                        @Param("postNumber") Integer postNumber,
                         @Param("viewCount") Integer viewCount);
+
+    List<Notice> findByCategoryAndPostNumberIn(NoticeCategory category, Collection<Integer> postNumbers);
 }
 

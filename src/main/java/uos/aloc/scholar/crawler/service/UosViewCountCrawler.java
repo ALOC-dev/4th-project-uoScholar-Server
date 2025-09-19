@@ -1,6 +1,7 @@
 package uos.aloc.scholar.crawler.service;
 
 import lombok.RequiredArgsConstructor;
+import uos.aloc.scholar.crawler.entity.Notice;
 import uos.aloc.scholar.crawler.entity.NoticeCategory;
 import uos.aloc.scholar.crawler.repository.NoticeRepository;
 
@@ -11,6 +12,11 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,6 +28,7 @@ public class UosViewCountCrawler {
 
     private static final String UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
     private static final int TIMEOUT_MS = 8000;
+    private static final int MISS_STREAK_LIMIT = 40;
 
     private static final Pattern FNVIEW_SEQ = Pattern.compile("fnView\\s*\\('.*?'\\s*,\\s*'([0-9]+)'\\s*\\)");
     private static final Pattern URL_SEQ    = Pattern.compile("[?&]seq=([0-9]+)");
@@ -67,6 +74,7 @@ public class UosViewCountCrawler {
 
                 // li 중에서 <p class="num">가 있는 항목만
                 Elements lis = doc.select("li:has(p.num)");
+                List<ViewEntry> entries = new ArrayList<>();
                 for (Element li : lis) {
                     Element pNum = li.selectFirst("p.num");
                     if (pNum == null) continue;
@@ -81,17 +89,18 @@ public class UosViewCountCrawler {
                     Integer views = extractViews(li);
                     if (views == null) continue;
 
-                    int updated = noticeRepository.updateViewCount(category, seq, views);
-                    if (updated == 0) { // DB 미존재
-                        missStreak++;
-                        if (missStreak >= 40) {
-                            System.out.printf("[ViewSync] %s(listId=%s) miss 3 in a row → stop (page=%d)%n",
-                                    category, listId, pageIndex);
-                            return;
-                        }
-                    } else {
-                        missStreak = 0; // 성공 시 연속 미스 리셋
+                    try {
+                        entries.add(new ViewEntry(Math.toIntExact(seq), views));
+                    } catch (ArithmeticException ignore) {
+                        // 게시글 번호가 int 범위를 벗어나는 경우는 건너뛴다.
                     }
+                }
+
+                missStreak = applyEntries(category, entries, missStreak);
+                if (missStreak >= MISS_STREAK_LIMIT) {
+                    System.out.printf("[ViewSync] %s(listId=%s) miss %d in a row → stop (page=%d)%n",
+                            category, listId, MISS_STREAK_LIMIT, pageIndex);
+                    return;
                 }
 
                 try { Thread.sleep(120); } catch (InterruptedException ignored) {}
@@ -173,4 +182,39 @@ public class UosViewCountCrawler {
 
         try { return Integer.parseInt(digits); } catch (Exception e) { return null; }
     }
+
+    int applyEntries(NoticeCategory category, List<ViewEntry> entries, int currentMissStreak) {
+        if (entries == null || entries.isEmpty()) {
+            return currentMissStreak;
+        }
+
+        List<Integer> postNumbers = entries.stream().map(ViewEntry::postNumber).distinct().toList();
+        List<Notice> notices = noticeRepository.findByCategoryAndPostNumberIn(category, postNumbers);
+        Map<Integer, Integer> existingViews = new HashMap<>();
+        for (Notice notice : notices) {
+            if (notice.getPostNumber() == null) continue;
+            existingViews.put(notice.getPostNumber(), notice.getViewCount());
+        }
+
+        int missStreak = currentMissStreak;
+        for (ViewEntry entry : entries) {
+            Integer currentView = existingViews.get(entry.postNumber());
+            if (currentView == null) {
+                missStreak++;
+            } else {
+                missStreak = 0;
+                if (!Objects.equals(currentView, entry.viewCount())) {
+                    noticeRepository.updateViewCount(category, entry.postNumber(), entry.viewCount());
+                }
+            }
+
+            if (missStreak >= MISS_STREAK_LIMIT) {
+                break;
+            }
+        }
+
+        return missStreak;
+    }
+
+    record ViewEntry(int postNumber, int viewCount) { }
 }
