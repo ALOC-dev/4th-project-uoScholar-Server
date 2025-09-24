@@ -123,7 +123,8 @@ public class UosViewCountCrawler {
          + "&seq=0&sort=&pageIndex=" + pageIndex
          + "&searchCnd=&searchWrd=&cate_id=&viewAuth=Y&writeAuth=N"
          + "&board_list_num=10&lpageCount=12"
-         + "&menuid=2000005009002000000";
+         + "&menuid=2000005009002000000"
+         + "&identified=anonymous&";
     }
 
     /**
