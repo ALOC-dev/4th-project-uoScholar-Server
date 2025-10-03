@@ -1,0 +1,35 @@
+spring:
+  config:
+    import: "optional:file:.env[.properties]"
+  
+  application:
+    name: scholar
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update  # 필요에 따라 none, update, create, create-drop df
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+  
+  task:
+    scheduling:
+      pool:
+        size: 2
+
+ai:
+  server:
+    url: ${AI_SERVER_URL}
+
+crawler:
+  view-sync:
+    pages: 10
+    cron: "0 0 */3 * * *" # 3시간마다

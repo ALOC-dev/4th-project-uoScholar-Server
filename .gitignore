@@ -38,6 +38,3 @@ out/
 
 ## .yml, properties ##
 .env
-application.yml
-*.yml
-application.properties
