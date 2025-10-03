@@ -1,0 +1,29 @@
+name: Build & Push :release (backend)
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}/backend
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USER }} --password-stdin
+
+      # 레포 루트에 Dockerfile이 있다고 가정합니다. (없으면 만들어야 합니다)
+      - name: Build image
+        run: |
+          docker build -t $IMAGE:release .
+
+      - name: Push image
+        run: |
+          docker push $IMAGE:release
