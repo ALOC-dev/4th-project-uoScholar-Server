@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
 
 env:
-  IMAGE: ghcr.io/${{ github.repository }}/backend
+  IMAGE_NAME: backend   # 서비스 이름만 지정
 
 jobs:
   build-and-push:
@@ -16,14 +16,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 리포지토리 경로를 강제로 소문자로 변환해 IMAGE 환경변수에 저장
+      - name: Prepare image name (lowercase)
+        run: |
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}/${{ env.IMAGE_NAME }}" >> $GITHUB_ENV
+          echo "IMAGE=$IMAGE"
+
       - name: Log in to GHCR
         run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USER }} --password-stdin
 
-      # 레포 루트에 Dockerfile이 있다고 가정합니다. (없으면 만들어야 합니다)
       - name: Build image
-        run: |
-          docker build -t $IMAGE:release .
+        run: docker build -t "$IMAGE:release" .
 
       - name: Push image
-        run: |
-          docker push $IMAGE:release
+        run: docker push "$IMAGE:release"
