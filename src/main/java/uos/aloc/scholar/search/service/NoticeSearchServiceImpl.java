@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 public class NoticeSearchServiceImpl implements NoticeSearchService {
 
     private final NoticeSearchRepository noticeSearchRepository;
+    private final DepartmentAliasService departmentAliasService;
 
     @Override
     public Page<NoticeResponseDTO> search(SearchRequestDTO req) {
@@ -21,8 +22,20 @@ public class NoticeSearchServiceImpl implements NoticeSearchService {
                 Math.max(1, req.getSize())
         );
 
+        var resolution = departmentAliasService.resolve(req.getDepartments());
+        var categories = resolution.categories().isEmpty()
+                ? req.effectiveCategories()
+                : resolution.categories();
+        var aliases = resolution.aliases();
+
         return noticeSearchRepository
-                .search(req.normalizedKeyword(), req.effectiveCategories(), pageable)
+                .search(
+                        req.normalizedKeyword(),
+                        categories,
+                        aliases,
+                        aliases.size(),
+                        pageable
+                )
                 .map(NoticeResponseDTO::from);
     }
 }
