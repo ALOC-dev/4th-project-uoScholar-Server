@@ -1,6 +1,7 @@
 package uos.aloc.scholar.search.dto;
 
 import uos.aloc.scholar.crawler.entity.*;
+import uos.aloc.scholar.search.service.DepartmentFilterRegistry;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,6 +15,7 @@ import java.util.Set;
 public class SearchRequestDTO {
     private String keyword = "";
     private List<NoticeCategory> category = new ArrayList<>();
+    private List<String> department = new ArrayList<>();
     private int page = 0;
     private int size = 15;
 
@@ -38,5 +40,12 @@ public class SearchRequestDTO {
 
     public String normalizedKeyword() {
         return keyword == null ? "" : keyword.trim();
+    }
+
+    public List<String> departmentAliases(DepartmentFilterRegistry registry) {
+        if (registry == null) {
+            return List.of();
+        }
+        return registry.resolveAliases(department);
     }
 }
