@@ -9,6 +9,7 @@ import uos.aloc.scholar.search.dto.SearchResponseDTO;
 import uos.aloc.scholar.search.repository.NoticeSearchRepository;
 import uos.aloc.scholar.search.service.KeywordStatsService;
 import uos.aloc.scholar.search.service.NoticeSearchService;
+import uos.aloc.scholar.search.filter.DepartmentFilterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,7 @@ public class NoticeSearchController {
     private final NoticeSearchRepository noticeSearchRepository;
     private final KeywordStatsService keywordStatsService;
     private final HotSearchProperties hotSearchProperties;
+    private final DepartmentFilterRegistry departmentFilterRegistry;
     private final Clock clock;
 
     @GetMapping("/search")
@@ -35,18 +37,20 @@ public class NoticeSearchController {
         // 1) 본문 목록 (기존 로직)
         Page<NoticeResponseDTO> page = noticeSearchService.search(req);
 
+        List<NoticeCategory> effectiveCategories = req.effectiveCategories(departmentFilterRegistry);
+
         // 2) HOT 조건: exact=true && page=0 && (keyword 비어있음)
         boolean wantHot = isHotRequested(req);
 
         // ✅ 키워드 저장 조건: page=0 이고, 카테고리가 전부 COLLEGE_* 이며,
         //    GENERAL/ACADEMIC 미포함, keyword 존재할 때만 카운트 증가
-        if (shouldLogKeyword(req)) {
+        if (shouldLogKeyword(req, effectiveCategories)) {
             keywordStatsService.log(req.getKeyword());
         }
 
         List<NoticeResponseDTO> hot = Collections.emptyList();
         if (wantHot) {
-            List<NoticeCategory> cats = req.effectiveCategories(); // 프로젝트에 이미 존재한다고 가정
+            List<NoticeCategory> cats = effectiveCategories;
             LocalDate fromDate = resolveHotFromDate();
             List<Notice> hotEntities;
             if (cats.size() == 1) {
@@ -86,21 +90,30 @@ public class NoticeSearchController {
     }
 
     // ===== 추가: 키워드 로깅 조건 검사 =====
-    private boolean shouldLogKeyword(SearchRequestDTO req) {
+    private boolean shouldLogKeyword(SearchRequestDTO req, List<NoticeCategory> categories) {
         if (req == null) return false;
         if (req.getPage() != 0) return false;
 
         String kw = req.getKeyword();
         if (kw == null || kw.isBlank()) return false;
 
-        List<NoticeCategory> cats = req.getCategory();
-        if (cats == null || cats.isEmpty()) return false;
+        if (categories == null || categories.isEmpty()) return false;
 
-        // 모든 카테고리가 COLLEGE_* 이고, GENERAL/ACADEMIC이 하나도 없어야 함
-        boolean allCollege = cats.stream().allMatch(this::isCollegeCategory);
-        boolean hasGenOrAcad = cats.stream().anyMatch(this::isGeneralOrAcademic);
+        boolean hasCollegeCategory = false;
+        for (NoticeCategory category : categories) {
+            if (category == null) {
+                continue;
+            }
+            if (isGeneralOrAcademic(category)) {
+                continue;
+            }
+            if (!isCollegeCategory(category)) {
+                return false;
+            }
+            hasCollegeCategory = true;
+        }
 
-        return allCollege && !hasGenOrAcad;
+        return hasCollegeCategory;
     }
 
     private boolean isCollegeCategory(NoticeCategory c) {
