@@ -29,4 +29,20 @@ public class NoticeResponseDTO {
                 .viewCount(n.getViewCount())
                 .build();
     }
+
+    public NoticeResponseDTO(Long id,
+                             String title,
+                             LocalDate postedDate,
+                             String department,
+                             String link,
+                             NoticeCategory category,
+                             Integer viewCount) {
+        this(id,
+                title,
+                postedDate,
+                department,
+                link,
+                category != null ? category.name() : null,
+                viewCount);
+    }
 }
