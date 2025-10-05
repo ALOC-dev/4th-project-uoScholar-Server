@@ -21,10 +21,13 @@ public interface NoticeSearchRepository extends JpaRepository<Notice, Long> {
                  OR n.summary    LIKE CONCAT(CONCAT('%', :keyword, '%'))
                  OR n.department LIKE CONCAT(CONCAT('%', :keyword, '%'))
                )
+           AND (:deptSize = 0 OR n.department IN :departments)
          ORDER BY n.postedDate DESC, n.id DESC
     """)
     Page<Notice> search(@Param("keyword") String keyword,
                         @Param("categories") List<NoticeCategory> categories,
+                        @Param("departments") List<String> departments,
+                        @Param("deptSize") int deptSize,
                         Pageable pageable);
 
     // ✅ HOT Top3 (단일 카테고리)
