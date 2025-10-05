@@ -7,6 +7,7 @@ import uos.aloc.scholar.search.dto.NoticeResponseDTO;
 import uos.aloc.scholar.search.dto.SearchRequestDTO;
 import uos.aloc.scholar.search.dto.SearchResponseDTO;
 import uos.aloc.scholar.search.repository.NoticeSearchRepository;
+import uos.aloc.scholar.search.service.DepartmentFilterRegistry;
 import uos.aloc.scholar.search.service.KeywordStatsService;
 import uos.aloc.scholar.search.service.NoticeSearchService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class NoticeSearchController {
     private final KeywordStatsService keywordStatsService;
     private final HotSearchProperties hotSearchProperties;
     private final Clock clock;
+    private final DepartmentFilterRegistry departmentFilterRegistry;
 
     @GetMapping("/search")
     public SearchResponseDTO<NoticeResponseDTO> search(@ModelAttribute SearchRequestDTO req) {
@@ -35,18 +37,21 @@ public class NoticeSearchController {
         // 1) 본문 목록 (기존 로직)
         Page<NoticeResponseDTO> page = noticeSearchService.search(req);
 
+        List<NoticeCategory> effectiveCategories = req.effectiveCategories(departmentFilterRegistry);
+        List<String> resolvedDeptAliases = req.resolvedDeptAliases(departmentFilterRegistry);
+
         // 2) HOT 조건: exact=true && page=0 && (keyword 비어있음)
         boolean wantHot = isHotRequested(req);
 
         // ✅ 키워드 저장 조건: page=0 이고, 카테고리가 전부 COLLEGE_* 이며,
         //    GENERAL/ACADEMIC 미포함, keyword 존재할 때만 카운트 증가
-        if (shouldLogKeyword(req)) {
+        if (shouldLogKeyword(req, req.getCategory(), effectiveCategories, resolvedDeptAliases)) {
             keywordStatsService.log(req.getKeyword());
         }
 
         List<NoticeResponseDTO> hot = Collections.emptyList();
         if (wantHot) {
-            List<NoticeCategory> cats = req.effectiveCategories(); // 프로젝트에 이미 존재한다고 가정
+            List<NoticeCategory> cats = effectiveCategories; // 프로젝트에 이미 존재한다고 가정
             LocalDate fromDate = resolveHotFromDate();
             List<Notice> hotEntities;
             if (cats.size() == 1) {
@@ -86,21 +91,40 @@ public class NoticeSearchController {
     }
 
     // ===== 추가: 키워드 로깅 조건 검사 =====
-    private boolean shouldLogKeyword(SearchRequestDTO req) {
+    private boolean shouldLogKeyword(SearchRequestDTO req,
+                                     List<NoticeCategory> requestedCategories,
+                                     List<NoticeCategory> effectiveCategories,
+                                     List<String> resolvedDeptAliases) {
         if (req == null) return false;
         if (req.getPage() != 0) return false;
 
         String kw = req.getKeyword();
         if (kw == null || kw.isBlank()) return false;
 
-        List<NoticeCategory> cats = req.getCategory();
+        List<NoticeCategory> cats = requestedCategories;
         if (cats == null || cats.isEmpty()) return false;
 
         // 모든 카테고리가 COLLEGE_* 이고, GENERAL/ACADEMIC이 하나도 없어야 함
         boolean allCollege = cats.stream().allMatch(this::isCollegeCategory);
         boolean hasGenOrAcad = cats.stream().anyMatch(this::isGeneralOrAcademic);
 
-        return allCollege && !hasGenOrAcad;
+        if (!allCollege || hasGenOrAcad) {
+            return false;
+        }
+
+        if (effectiveCategories == null || effectiveCategories.isEmpty()) {
+            return false;
+        }
+
+        if (resolvedDeptAliases != null && !resolvedDeptAliases.isEmpty()) {
+            return false;
+        }
+
+        boolean effectiveOnlyCollege = effectiveCategories.stream()
+                .filter(cat -> !isGeneralOrAcademic(cat))
+                .allMatch(this::isCollegeCategory);
+
+        return effectiveOnlyCollege;
     }
 
     private boolean isCollegeCategory(NoticeCategory c) {

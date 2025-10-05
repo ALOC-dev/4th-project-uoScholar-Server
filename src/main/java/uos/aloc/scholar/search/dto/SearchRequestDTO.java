@@ -1,8 +1,9 @@
 package uos.aloc.scholar.search.dto;
 
-import uos.aloc.scholar.crawler.entity.*;
 import lombok.Getter;
 import lombok.Setter;
+import uos.aloc.scholar.crawler.entity.NoticeCategory;
+import uos.aloc.scholar.search.service.DepartmentFilterRegistry;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -14,6 +15,7 @@ import java.util.Set;
 public class SearchRequestDTO {
     private String keyword = "";
     private List<NoticeCategory> category = new ArrayList<>();
+    private List<String> departments = new ArrayList<>();
     private int page = 0;
     private int size = 15;
 
@@ -21,6 +23,14 @@ public class SearchRequestDTO {
     private boolean exact = false;
 
     public List<NoticeCategory> effectiveCategories() {
+        return effectiveCategories(null);
+    }
+
+    public List<NoticeCategory> effectiveCategories(DepartmentFilterRegistry deptRegistry) {
+        return computeEffectiveCategories();
+    }
+
+    private List<NoticeCategory> computeEffectiveCategories() {
         if (exact) {
             // exact=true면 사용자가 준 카테고리만 사용 (없으면 학사만 기본값으로)
             if (category == null || category.isEmpty()) {
@@ -34,6 +44,19 @@ public class SearchRequestDTO {
         set.add(NoticeCategory.GENERAL);
         if (category != null) set.addAll(category);
         return new ArrayList<>(set);
+    }
+
+    public List<String> resolvedDeptAliases(DepartmentFilterRegistry deptRegistry) {
+        List<String> raw = departments == null ? List.of() : departments;
+        if (raw.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> resolved = deptRegistry == null ? raw : deptRegistry.resolveAliases(raw);
+        if (resolved == null || resolved.isEmpty()) {
+            return List.of();
+        }
+        return new ArrayList<>(new LinkedHashSet<>(resolved));
     }
 
     public String normalizedKeyword() {
