@@ -30,15 +30,7 @@ public class NoticeSearchController {
     private final Clock clock;
 
     @GetMapping("/search")
-    public SearchResponseDTO<NoticeResponseDTO> search(@ModelAttribute SearchRequestDTO req,
-                                                      @RequestParam(value = "departments", required = false) List<String> departments,
-                                                      @RequestParam(value = "department", required = false) List<String> department) {
-
-        if (departments != null && !departments.isEmpty()) {
-            req.setDepartments(departments);
-        } else if (department != null && !department.isEmpty()) {
-            req.setDepartments(department);
-        }
+    public SearchResponseDTO<NoticeResponseDTO> search(@ModelAttribute SearchRequestDTO req) {
 
         // 1) 본문 목록 (기존 로직)
         Page<NoticeResponseDTO> page = noticeSearchService.search(req);
