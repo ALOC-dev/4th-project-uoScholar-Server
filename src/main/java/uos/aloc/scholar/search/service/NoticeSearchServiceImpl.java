@@ -3,6 +3,7 @@ package uos.aloc.scholar.search.service;
 import uos.aloc.scholar.crawler.entity.NoticeCategory;
 import uos.aloc.scholar.search.dto.NoticeResponseDTO;
 import uos.aloc.scholar.search.dto.SearchRequestDTO;
+import uos.aloc.scholar.search.filter.DepartmentFilterRegistry;
 import uos.aloc.scholar.search.repository.NoticeSearchRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,7 +30,7 @@ public class NoticeSearchServiceImpl implements NoticeSearchService {
         String keyword = req.normalizedKeyword();
         String keywordLower = keyword.toLowerCase(Locale.ROOT);
         List<NoticeCategory> categories = req.effectiveCategories();
-        List<String> deptAliases = req.departmentAliases(departmentFilterRegistry);
+        List<String> deptAliases = req.resolvedDeptAliases(departmentFilterRegistry);
 
         return noticeSearchRepository
                 .search(keyword, keywordLower, categories, deptAliases, pageable);

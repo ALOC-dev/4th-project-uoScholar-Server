@@ -1,7 +1,6 @@
 package uos.aloc.scholar.search.dto;
 
 import uos.aloc.scholar.crawler.entity.*;
-import uos.aloc.scholar.search.service.DepartmentFilterRegistry;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -144,9 +143,6 @@ public class SearchRequestDTO {
     }
 
     public List<String> departmentAliases(DepartmentFilterRegistry registry) {
-        if (registry == null) {
-            return List.of();
-        }
-        return registry.resolveAliases(department);
+        return resolvedDeptAliases(registry);
     }
 }
