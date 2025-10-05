@@ -3,6 +3,7 @@ package uos.aloc.scholar.search.config;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
 import uos.aloc.scholar.crawler.entity.NoticeCategory;
+import uos.aloc.scholar.search.filter.DepartmentFilterRegistry.DepartmentFilter;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,7 +16,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Component
-public class DepartmentFilterRegistry {
+public class DepartmentFilterRegistry implements uos.aloc.scholar.search.filter.DepartmentFilterRegistry {
 
     private static final String YAML_DATA = """
 국어국문학과:
@@ -310,6 +311,19 @@ public class DepartmentFilterRegistry {
         return Optional.ofNullable(metaByDepartment.containsKey(normalized) ? normalized : null);
     }
 
+    @Override
+    public Optional<DepartmentFilter> find(String department) {
+        Optional<String> canonicalName = findCanonicalName(department);
+        if (canonicalName.isEmpty()) {
+            return Optional.empty();
+        }
+        DepartmentMeta meta = metaByDepartment.get(canonicalName.get());
+        if (meta == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new SimpleDepartmentFilter(canonicalName.get(), meta.category()));
+    }
+
     public Optional<NoticeCategory> lookupCategory(String name) {
         return getMeta(name).map(DepartmentMeta::category);
     }
@@ -326,6 +340,26 @@ public class DepartmentFilterRegistry {
         public DepartmentMeta {
             category = Objects.requireNonNull(category, "category");
             aliases = aliases == null ? List.of() : List.copyOf(aliases);
+        }
+    }
+
+    private static final class SimpleDepartmentFilter implements DepartmentFilter {
+        private final String canonicalAlias;
+        private final List<NoticeCategory> categories;
+
+        private SimpleDepartmentFilter(String canonicalAlias, NoticeCategory category) {
+            this.canonicalAlias = Objects.requireNonNull(canonicalAlias, "canonicalAlias");
+            this.categories = List.of(Objects.requireNonNull(category, "category"));
+        }
+
+        @Override
+        public String canonicalAlias() {
+            return canonicalAlias;
+        }
+
+        @Override
+        public List<NoticeCategory> categories() {
+            return categories;
         }
     }
 }
