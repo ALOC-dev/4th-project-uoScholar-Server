@@ -30,9 +30,9 @@ public interface NoticeSearchRepository extends JpaRepository<Notice, Long> {
                )
            AND (
                  :keyword IS NULL OR :keyword = ''
-                 OR LOWER(n.title)      LIKE CONCAT('%', :keywordLower, '%')
-                 OR LOWER(n.summary)    LIKE CONCAT('%', :keywordLower, '%')
-                 OR LOWER(n.department) LIKE CONCAT('%', :keywordLower, '%')
+                 OR LOWER(n.title) LIKE CONCAT('%', :keywordLower, '%')
+                 OR LOWER(FUNCTION('IFNULL', n.summary, '')) LIKE CONCAT('%', :keywordLower, '%')
+                 OR LOWER(FUNCTION('IFNULL', n.department, '')) LIKE CONCAT('%', :keywordLower, '%')
                )
          ORDER BY n.postedDate DESC, n.id DESC
     """)

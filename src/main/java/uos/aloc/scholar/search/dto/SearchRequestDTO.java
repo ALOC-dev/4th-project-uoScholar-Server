@@ -1,7 +1,6 @@
 package uos.aloc.scholar.search.dto;
 
 import uos.aloc.scholar.crawler.entity.*;
-import uos.aloc.scholar.search.service.DepartmentFilterRegistry;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -88,12 +87,7 @@ public class SearchRequestDTO {
             return sanitizedDepartments;
         }
 
-        List<String> resolved = new ArrayList<>();
-        for (String dept : sanitizedDepartments) {
-            Optional<DepartmentFilterRegistry.DepartmentFilter> filter = registry.find(dept);
-            resolved.add(filter.map(DepartmentFilterRegistry.DepartmentFilter::canonicalAlias).orElse(dept));
-        }
-        return resolved;
+        return new ArrayList<>(registry.resolveAliases(sanitizedDepartments));
     }
 
     private List<NoticeCategory> computeEffectiveCategories(Set<NoticeCategory> base) {
@@ -144,9 +138,6 @@ public class SearchRequestDTO {
     }
 
     public List<String> departmentAliases(DepartmentFilterRegistry registry) {
-        if (registry == null) {
-            return List.of();
-        }
-        return registry.resolveAliases(department);
+        return resolvedDeptAliases(registry);
     }
 }
