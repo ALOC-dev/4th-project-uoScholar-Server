@@ -53,4 +53,19 @@ public interface NoticeSearchRepository extends JpaRepository<Notice, Long> {
             List<NoticeCategory> categories,
             LocalDate fromDate
     );
+
+    // ✅ 학과 모드: 단일 카테고리 + 부서 alias 집합 내 Top3
+    List<Notice> findTop3ByCategoryAndDepartmentInAndPostedDateGreaterThanEqualOrderByViewCountDescPostedDateDesc(
+        NoticeCategory category,
+        List<String> deptAliases,
+        LocalDate fromDate
+    );
+
+    // ✅ 학과 모드: 다중 카테고리 + 부서 alias 집합 내 Top3
+    List<Notice> findTop3ByCategoryInAndDepartmentInAndPostedDateGreaterThanEqualOrderByViewCountDescPostedDateDesc(
+        List<NoticeCategory> categories,
+        List<String> deptAliases,
+        LocalDate fromDate
+    );
+    
 }

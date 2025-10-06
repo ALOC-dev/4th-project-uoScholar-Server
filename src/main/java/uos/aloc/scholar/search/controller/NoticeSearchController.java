@@ -56,20 +56,40 @@ public class NoticeSearchController {
         // 2-2) HOT 조회
         List<NoticeResponseDTO> hot = Collections.emptyList();
         if (wantHot) {
-            List<NoticeCategory> cats = req.effectiveCategories(deptRegistry);
+            List<NoticeCategory> cats = req.effectiveCategories(deptRegistry); //카테고리 개수
+            List<String> deptAliases = req.resolvedDeptAliases(deptRegistry);
+            boolean hasDept = deptAliases != null && !deptAliases.isEmpty(); // alias가 있는지 없는지 즉 department인지 아닌지
             LocalDate fromDate = resolveHotFromDate();
             List<Notice> hotEntities;
 
             if (cats.size() == 1) {
-                hotEntities = noticeSearchRepository
-                        .findTop3ByCategoryAndPostedDateGreaterThanEqualOrderByViewCountDescPostedDateDesc(
-                                cats.get(0), fromDate
-                        );
+                if (hasDept) {
+                    // 학과 모드: 단일 카테고리 + 부서 alias 내 Top3
+                    hotEntities = noticeSearchRepository
+                            .findTop3ByCategoryAndDepartmentInAndPostedDateGreaterThanEqualOrderByViewCountDescPostedDateDesc(
+                                    cats.get(0), deptAliases, fromDate
+                            );
+                } else {
+                    // 일반/학사 모드: 카테고리만 Top3
+                    hotEntities = noticeSearchRepository
+                            .findTop3ByCategoryAndPostedDateGreaterThanEqualOrderByViewCountDescPostedDateDesc(
+                                    cats.get(0), fromDate
+                            );
+                }
             } else {
-                hotEntities = noticeSearchRepository
-                        .findTop3ByCategoryInAndPostedDateGreaterThanEqualOrderByViewCountDescPostedDateDesc(
-                                cats, fromDate
-                        );
+                if (hasDept) {
+                    // 학과 모드: 다중 카테고리 + 부서 alias 내 Top3
+                    hotEntities = noticeSearchRepository
+                            .findTop3ByCategoryInAndDepartmentInAndPostedDateGreaterThanEqualOrderByViewCountDescPostedDateDesc(
+                                    cats, deptAliases, fromDate
+                            );
+                } else {
+                    // 일반/학사 모드: 다중 카테고리 Top3
+                    hotEntities = noticeSearchRepository
+                            .findTop3ByCategoryInAndPostedDateGreaterThanEqualOrderByViewCountDescPostedDateDesc(
+                                    cats, fromDate
+                            );
+                }
             }
             hot = hotEntities.stream().map(NoticeResponseDTO::from).toList();
         }

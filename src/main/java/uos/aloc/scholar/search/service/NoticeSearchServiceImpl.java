@@ -41,6 +41,6 @@ public class NoticeSearchServiceImpl implements NoticeSearchService {
         Page<Notice> entityPage = repository.search(categories, deptAliases, kw, pageReq);
 
         // ✅ 여기서 엔티티 → DTO 명시적 매핑
-        return entityPage.map(NoticeResponseDTO::fromEntity);
+        return entityPage.map(NoticeResponseDTO::from);
     }
 }
