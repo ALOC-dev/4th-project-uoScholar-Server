@@ -3,7 +3,8 @@ package uos.aloc.scholar.search.service;
 import uos.aloc.scholar.search.dto.NoticeResponseDTO;
 import uos.aloc.scholar.search.dto.SearchRequestDTO;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface NoticeSearchService {
-    Page<NoticeResponseDTO> search(SearchRequestDTO req);
+    Page<NoticeResponseDTO> search(SearchRequestDTO req, Pageable pageable);
 }
