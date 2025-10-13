@@ -26,5 +26,7 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
                         @Param("viewCount") Integer viewCount);
 
     List<Notice> findByCategoryAndPostNumberIn(NoticeCategory category, Collection<Integer> postNumbers);
+
+    List<Notice> findByCategory(NoticeCategory category);
 }
 
