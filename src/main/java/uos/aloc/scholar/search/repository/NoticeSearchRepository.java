@@ -16,30 +16,32 @@ public interface NoticeSearchRepository extends JpaRepository<Notice, Long> {
     @Query("""
         SELECT n
         FROM Notice n
-        WHERE n.category IN :categories
+        WHERE ( :catSize = 0 OR n.category IN :categories )
           AND ( :deptSize = 0 OR n.department IN :deptAliases )
           AND (
                 :keyword IS NULL
-             OR LOWER(n.title)      LIKE LOWER(CONCAT('%', :keyword, '%'))
-             OR LOWER(COALESCE(n.department, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+             OR LOWER(n.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
           )
         """)
     Page<Notice> search(@Param("categories") List<NoticeCategory> categories,
-                                   @Param("deptAliases") List<String> deptAliases,
-                                   @Param("keyword") String keyword,
-                                   @Param("deptSize") int deptSize,
-                                   Pageable pageable);
+                        @Param("deptAliases") List<String> deptAliases,
+                        @Param("keyword") String keyword,
+                        @Param("catSize") int catSize,
+                        @Param("deptSize") int deptSize,
+                        Pageable pageable);
 
     default Page<Notice> search(List<NoticeCategory> categories,
-                                           List<String> deptAliases,
-                                           String keyword,
-                                           Pageable pageable) {
-        int size = (deptAliases == null) ? 0 : deptAliases.size();
-        return search(categories,
-                (deptAliases == null) ? List.of() : deptAliases,
-                keyword,
-                size,
-                pageable);
+                                List<String> deptAliases,
+                                String keyword,
+                                Pageable pageable) {
+        List<NoticeCategory> cats = (categories == null) ? List.of() : categories;
+        List<String> depts = (deptAliases == null) ? List.of() : deptAliases;
+        return search(cats,
+                      depts,
+                      keyword,
+                      cats.size(),
+                      depts.size(),
+                      pageable);
     }
 
     // ✅ HOT Top3 (단일 카테고리)

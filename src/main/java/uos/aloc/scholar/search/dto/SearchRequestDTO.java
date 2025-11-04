@@ -54,13 +54,18 @@ public class SearchRequestDTO {
     public void validateForSearch(DepartmentFilterRegistry registry) {
         boolean hasDept = departments != null && !departments.isEmpty();
         boolean hasCategory = category != null;
+        boolean hasKeyword = StringUtils.hasText(normalizedKeyword());
 
+        // 둘 다 있는 것은 금지(기존 유지)
         if (hasDept && hasCategory) {
             throw new IllegalArgumentException("잘못된 요청: department와 category를 함께 보낼 수 없습니다.");
         }
-        if (!hasDept && !hasCategory) {
-            throw new IllegalArgumentException("잘못된 요청: department 또는 category 중 하나는 반드시 포함되어야 합니다.");
+
+        // 기존: 둘 다 미존재 금지 → 변경: 키워드만 있으면 허용
+        if (!hasDept && !hasCategory && !hasKeyword) {
+            throw new IllegalArgumentException("잘못된 요청: department/category/keyword 중 하나는 반드시 포함되어야 합니다.");
         }
+
         if (hasDept) {
             List<String> unknown = departments.stream()
                     .filter(d -> !registry.contains(d))
@@ -71,6 +76,7 @@ public class SearchRequestDTO {
         }
     }
 
+
     /**
      * 효과적 카테고리 계산
      * - 학과 공지 모드: departments → (학과별 단과대)들의 합집합
@@ -80,13 +86,13 @@ public class SearchRequestDTO {
         boolean hasDept = departments != null && !departments.isEmpty();
         if (hasDept) {
             return departments.stream()
-                    .map(registry::getMeta)          // validateForSearch 로 unknown 차단됨
+                    .map(registry::getMeta)
                     .map(DepartmentFilterRegistry.DepartmentMeta::category)
                     .distinct()
                     .collect(Collectors.toList());
         }
-        // 카테고리 공지 모드
-        return List.of(category);
+        // 카테고리 지정이 없으면 빈 리스트 → 레포지토리에서 catSize=0으로 전체 검색
+        return (category == null) ? List.of() : List.of(category);
     }
 
     /**
