@@ -21,6 +21,8 @@ public interface NoticeSearchRepository extends JpaRepository<Notice, Long> {
           AND (
                 :keyword IS NULL
              OR LOWER(n.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+             OR n.summary LIKE CONCAT('%', :keyword, '%')
+             OR LOWER(n.department) LIKE LOWER(CONCAT('%', :keyword, '%'))
           )
         """)
     Page<Notice> search(@Param("categories") List<NoticeCategory> categories,
